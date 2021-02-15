@@ -1,0 +1,8 @@
+numpy
+scipy
+pandas
+matplotlib
+mne
+visbrain
+tensorpac
+doit
