@@ -1,3 +1,8 @@
+import os, sys
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
 import argparse, mne, numpy as np, scipy as sp
 from glob import glob
 from config import fname, raw_cfg
@@ -23,7 +28,7 @@ def rereference(inst,refs='average'):
     return inst.set_eeg_reference(refs)
 
 def ica_cleanup(raw,filter=[1,40],decim=10,components=20,tmin=100.):
-    ica = mne.preprocessing.ICA(max_pca_components=components).fit(raw.copy().crop(tmin=tmin).filter(*filter),decim=decim);
+    ica = mne.preprocessing.ICA(n_components=components).fit(raw.copy().crop(tmin=tmin).filter(*filter),decim=decim);
     a = [None]*4
     a[0]=ica.find_bads_eog(raw,ch_name='BVEOG',start=tmin,stop=np.min([tmin+1000.,raw.times[-1]]))[0]
     a[1]=ica.find_bads_eog(raw,ch_name='TVEOG',start=tmin,stop=np.min([tmin+1000.,raw.times[-1]]))[0]

@@ -1,3 +1,8 @@
+import os, sys
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
 import argparse, mne, numpy as np, scipy as sp, tensorpac as tp
 
 from config import fname, pac_cfg

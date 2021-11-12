@@ -1,3 +1,8 @@
+import os, sys
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
 import argparse, mne, numpy as np, pandas as pd
 
 from config import fname, epo_cfg
@@ -121,18 +126,18 @@ def get_trialstatus(metadata,epochs):
     rest[dropped[i:]=='both']=np.arange(np.sum(dropped[i:]=='both'))+1
     return np.concatenate((stim,rest))
 
-def get_epochs_with_metadata(raw,cond,tmin=-2.5,tmax=3.5,baseline=None,lock='stimulus'):
+def get_epochs_with_metadata(raw,cond,tmin=-2.5,tmax=3.5,baseline=None,detrend=1,lock='stimulus'):
     if 'trial' in cond.keys():
         evts,eids = mne.events_from_annotations(raw)
         locks = cond.get(lock,{}).get('types',{}).get('main',{})
         event_id = {'/'.join([cond.get('condition','#'),k]).replace('#/',''):eids.get(v,-1) for k,v in locks.items() if v in eids.keys()}
         metadata = get_metadata(raw,cond,lock)
         evts = evts[np.sum([evts[:,2]==v for v in event_id.values()],axis=0)>0]
-        epochs = mne.Epochs(raw,evts,event_id,tmin=tmin,tmax=tmax,baseline=baseline,detrend=1,metadata=metadata)
+        epochs = mne.Epochs(raw,evts,event_id,tmin=tmin,tmax=tmax,baseline=baseline,detrend=detrend,metadata=metadata)
         epochs = epochs[epochs.metadata.TrialEvents.map(lambda d: np.any([k in cond.get('require', d.keys()) for k in d.keys()]))]
         return epochs
     else:
-        epochs = [get_epochs_with_metadata(raw,c,tmin,tmax,baseline,lock) for c in cond.values()]
+        epochs = [get_epochs_with_metadata(raw,c,tmin,tmax,baseline,detrend,lock) for c in cond.values()]
         metadata = pd.concat([e.metadata for e in epochs]).sort_values('LockSample')
         if metadata.size:
             epochs = [e.load_data() for e in epochs]
@@ -145,7 +150,7 @@ def get_epochs_with_metadata(raw,cond,tmin=-2.5,tmax=3.5,baseline=None,lock='sti
 raw = mne.io.read_raw_fif(fname.subject_raw(subject=subject),preload=True)
 
 # TODO: split
-epochs,metadata = get_epochs_with_metadata(raw,event_codes,toi[0],toi[1],bsl,lock)
+epochs,metadata = get_epochs_with_metadata(raw,event_codes,tmin=toi[0],tmax=toi[1],baseline=bsl,lock=lock)
 
 # TODO: Need to modularize/parameterize metadata parsing
 if metadata.size:
