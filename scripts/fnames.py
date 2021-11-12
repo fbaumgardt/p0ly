@@ -1,1 +1,0 @@
-../fnames.py
